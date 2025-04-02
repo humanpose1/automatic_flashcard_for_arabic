@@ -61,7 +61,7 @@ class FlashCard:
             fields=[
                 info["arabic_sentence"],
                 info["true_tashkeel"],
-                llm_output["english_sentence"],
+                llm_output["translated_sentence"],
                 json_to_html(llm_output["vocabulary"]),
                 llm_output["explanation"],
                 info["link"],
@@ -76,42 +76,69 @@ def init_flashcard_reverse(title: str):
     arabic_html = '''
         <div id="arabic">{{Arabic}}</div>
         <div id="hidden-tashkeel">
-            <p class="trigger_tashkeel" onclick="toggleMessage("tashkeel")">[Tashkeel]</p>
+            <p class="trigger" onclick="toggleMessage('tashkeel')">[Tashkeel]</p>
             <p id="tashkeel" class="hidden">{{Tashkeel}}</p>
         </div>
         <div id="link">
-            Link: {{Link}}
+            Link: <a href={{Link}}>{{Link}}</a>
         </div>
+
         <script>
             function toggleMessage(uid) {
                 var message = document.getElementById(uid);
                 message.classList.toggle('hidden');
             }
-        </script>          
+        </script>
+        <style>
+            .hidden {
+                display: none;
+            }
+            .trigger {
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+        </style>
     '''
 
     english_html = '''
-
         <div id="english">{{English}}</div>
+
         <div id="hidden-vocabulary">
-            <p class="trigger_vocabulary" onclick="toggleMessage("vocabulary")">[Vocabulary]</p>
-            <p id="vocabulary" class="hidden">{{Vocabulary}}</p>
+            <p class="trigger" onclick="toggleMessageEn('vocabulary')">[Vocabulary]</p>
+            <div id="vocabulary" class="hidden">{{Vocabulary}}</div>
         </div>
+
         <div id="hidden-explanation">
-            <p class="trigger_explanation" onclick="toggleMessage("explanation")">[Explanation]</p>
-            <p id="tashkeel" class="hidden">{{Explanation}}</p>
+            <p class="trigger" onclick="toggleMessageEn('explanation')">[Explanation]</p>
+            <div id="explanation" class="hidden">{{Explanation}}</div>
         </div>
+
         <div id="link">
-            Link: {{Link}}
+            Link: <a href="{{Link}}">{{Link}}</a>
         </div>
 
-
-    <script>
-            function toggleMessage(uid) {
+        <script>
+            function toggleMessageEn(uid) {
                 var message = document.getElementById(uid);
-                message.classList.toggle('hidden');
+                if (message) {
+                    message.classList.toggle('hidden'); // Toggle visibility
+                } else {
+                    console.error("Element with ID '" + uid + "' not found!");
+                }
             }
-    </script> 
+        </script>
+
+        <style>
+            .hidden {
+                display: none;
+            }
+            .trigger {
+                cursor: pointer;
+                color: blue;
+                text-decoration: underline;
+            }
+        </style>
     '''
 
     model = genanki.Model(
