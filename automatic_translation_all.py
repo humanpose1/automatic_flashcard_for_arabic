@@ -4,11 +4,13 @@ import pathlib
 import time
 
 import groq
+from langchain_groq import ChatGroq
 import tqdm
 
-from src import prepare_models
+from src import prepare_qwen_models
 from src import prepare_groq_model
 from src import create_workflow
+from src import QwenLLM
 
 def prepare_sentences(inputs: str):
     with open(inputs, "r", encoding="utf-8") as f:
@@ -40,11 +42,11 @@ def main(
     else:
         output.parent.mkdir(exist_ok=True, parents=True)
 
-    llm = None
+    llm: QwenLLM | ChatGroq
     if use_groq:
         llm = prepare_groq_model()
     else:
-        llm = prepare_models()
+        llm = prepare_qwen_models()
 
     workflow = create_workflow(llm)
     graph = workflow.compile()
