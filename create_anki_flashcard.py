@@ -38,7 +38,7 @@ def json_to_html(json_str: str) -> str | None:
     return html
 
 
-def get_random_number():
+def get_random_number() -> int:
     return random.randrange(1 << 30, 1 << 31)
 
 def get_parser():
@@ -77,7 +77,7 @@ class FlashCard:
                 note.tags.extend(labels)
             self.deck.add_note(note)
 
-def init_flashcard_reverse(title: str):
+def init_flashcard_reverse(title: str) -> FlashCard:
 
     arabic_html = '''
         <div id="arabic">{{Arabic}}</div>

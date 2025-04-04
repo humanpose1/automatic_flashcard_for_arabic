@@ -4,13 +4,13 @@ import json
 import pathlib
 import time
 
-from src import prepare_models
+from src import prepare_qwen_models
 from src import create_workflow
 
 
 def main(sentence: str, output: pathlib.Path):
     
-    llm = prepare_models()
+    llm = prepare_qwen_models()
     workflow = create_workflow(llm)
     graph = workflow.compile()
     start = time.time()

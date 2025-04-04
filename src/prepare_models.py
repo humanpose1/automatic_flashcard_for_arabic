@@ -1,12 +1,24 @@
 from typing import List, Optional
 
-
 from langchain.llms.base import LLM
+from langchain_core.language_models import BaseChatModel
 from langchain_groq import ChatGroq
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import transformers
 
-def prepare_models(model_name: str = "Qwen/Qwen2.5-72B-Instruct-AWQ"):
+
+class QwenLLM(LLM, BaseModel):
+    model: transformers.Qwen2ForCausalLM 
+    tokenizer: transformers.Qwen2TokenizerFast
+
+    @property
+    def _llm_type(self) -> str:
+        return "custom"
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        return execute_prompt(prompt, self.model, self.tokenizer)
+
+def prepare_qwen_models(model_name: str = "Qwen/Qwen2.5-72B-Instruct-AWQ") -> QwenLLM:
     
 
     model = transformers.AutoModelForCausalLM.from_pretrained(
@@ -20,7 +32,7 @@ def prepare_models(model_name: str = "Qwen/Qwen2.5-72B-Instruct-AWQ"):
     return llm
 
 
-def prepare_groq_model(model_name: str = "mistral-saba-24b"):
+def prepare_groq_model(model_name: str = "mistral-saba-24b") -> ChatGroq:
     llm = ChatGroq(
         model=model_name,
         temperature=0.7,
@@ -60,13 +72,3 @@ def execute_prompt(
     response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
     return response
 
-class QwenLLM(LLM, BaseModel):
-    model: transformers.Qwen2ForCausalLM 
-    tokenizer: transformers.Qwen2TokenizerFast
-
-    @property
-    def _llm_type(self) -> str:
-        return "custom"
-
-    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        return execute_prompt(prompt, self.model, self.tokenizer)

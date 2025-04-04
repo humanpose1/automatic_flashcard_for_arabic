@@ -1,31 +1,33 @@
 import functools
 import json
 import re
+from typing import Any
 
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages.ai import AIMessage
+from langchain.llms.base import LLM
+from langchain_core.messages import BaseMessage
 from langgraph import graph
 import markdown
 import pydantic
 
 
-def _maybe_return_content(msg: str | AIMessage):
+def _maybe_return_content(msg: str | BaseMessage) -> str:
     if isinstance(msg, str):
         return msg
-    elif isinstance(msg, AIMessage):
-        return msg.content
+    elif isinstance(msg, BaseMessage):
+        return str(msg.content)
     else:
         raise ValueError("Undefined output LLM type.")
 
 class ArabicState(pydantic.BaseModel):
     arabic_sentence: str
-    tashkeel_sentence: str = pydantic.Field(default=None, exclude=True)
-    translated_sentence: str = pydantic.Field(default=None, exclude=True)
-    vocabulary: str = pydantic.Field(default=None, exclude=True)
-    explanation: str = pydantic.Field(default=None, exclude=True)
-    combined_output: dict[str, str] = pydantic.Field(default=None, exclude=True)
+    tashkeel_sentence: str | None = pydantic.Field(default=None, exclude=True)
+    translated_sentence: str | None = pydantic.Field(default=None, exclude=True)
+    vocabulary: str | None = pydantic.Field(default=None, exclude=True)
+    explanation: str | None = pydantic.Field(default=None, exclude=True)
+    combined_output: dict[str, Any] | None = pydantic.Field(default=None, exclude=True)
 
-def get_tashkeel(state: ArabicState, llm: BaseChatModel):
+def get_tashkeel(state: ArabicState, llm: BaseChatModel | LLM) -> dict[str, str]:
     query = f"""Get the 'tashkeel' (diacritical marks) of this arabic phrase, ensuring the meaning, tone, and syntax are preserved accurately.
     
     # Steps
@@ -53,7 +55,7 @@ def get_tashkeel(state: ArabicState, llm: BaseChatModel):
     msg = _maybe_return_content(msg)
     return {"tashkeel_sentence": msg}
 
-def get_translation(state: ArabicState, llm: BaseChatModel):
+def get_translation(state: ArabicState, llm: BaseChatModel | LLM) -> dict[str, str]:
     query = f"""Translate the given Arabic text into English accurately.
 
     # Steps
@@ -87,7 +89,7 @@ class WordAnalysis(pydantic.BaseModel):
     singular_plural: dict = pydantic.Field(description="Singular and plural forms if the word is a noun")
 
 
-def extract_json_from_markdown(markdown_text):
+def extract_json_from_markdown(markdown_text: str) -> None | Any:
     # Regular expression to extract JSON inside triple backticks
     match = re.search(r"```json\n(.*?)\n```", markdown_text, re.DOTALL)
     
@@ -103,7 +105,7 @@ def extract_json_from_markdown(markdown_text):
         print("No JSON found")
         return None
 
-def get_word_by_word_analysis(state: ArabicState, llm: BaseChatModel):
+def get_word_by_word_analysis(state: ArabicState, llm: BaseChatModel | LLM) -> dict[str, str]:
 
 
     example_json =  """
@@ -247,19 +249,19 @@ def get_word_by_word_analysis(state: ArabicState, llm: BaseChatModel):
     Output:
     """
 
-    
     msg = llm.invoke(query)
     msg = _maybe_return_content(msg)
     vocab = extract_json_from_markdown(msg)
     if vocab is None:
-        vocab = msg
+        return {"vocabulary": msg}
     else:
-        vocab = json.dumps(vocab, ensure_ascii=False, indent=4)
-    return {"vocabulary": vocab}
+        return {
+            "vocabulary": json.dumps(vocab, ensure_ascii=False, indent=4)}
+    
 
 
 
-def get_explanation(state: ArabicState, llm: BaseChatModel):
+def get_explanation(state: ArabicState, llm: BaseChatModel | LLM) -> dict[str, str]:
     
     
     query = f"""Analyze the following Arabic sentence:
@@ -288,14 +290,13 @@ def get_explanation(state: ArabicState, llm: BaseChatModel):
     msg = _maybe_return_content(msg)
     return {"explanation": markdown.markdown(msg)}
 
-def aggregate(state: ArabicState):
-    combined_output = {}
+def aggregate(state: ArabicState) -> dict[str, dict[str, str | None]]:
+    combined_output: dict[str, str | None] = {}
     combined_output["arabic_sentence"] = state.arabic_sentence
     combined_output["tashkeel_sentence"] = state.tashkeel_sentence
     combined_output["translated_sentence"] = state.translated_sentence
     combined_output["vocabulary"] = state.vocabulary
     combined_output["explanation"] = state.explanation
-
     return {"combined_output": combined_output}
    
     
@@ -303,7 +304,7 @@ def aggregate(state: ArabicState):
 
 
 
-def create_workflow(llm: BaseChatModel):
+def create_workflow(llm: LLM | BaseChatModel) -> graph.StateGraph:
     workflow = graph.StateGraph(ArabicState)
 
     # Create nodes
