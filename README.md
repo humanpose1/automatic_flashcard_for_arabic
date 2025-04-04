@@ -24,7 +24,7 @@ uv run playwright install chrome firefox
 ```
 
 
-We scrape media arabic sentence from [aljazeera learning platform](learning.aljazzera.net):
+We scrape media arabic sentence from [aljazeera learning platform](https://learning.aljazeera.net/en):
 ```bash
 uv run python scrape_arabic_text.py -o out/article_all.json
 ```
