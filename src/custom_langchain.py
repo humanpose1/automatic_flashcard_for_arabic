@@ -29,7 +29,7 @@ def prepare_groq_model(model_name: str = "mistral-saba-24b"):
         max_retries=2,
     
     )
-    
+    return llm
 
 
 

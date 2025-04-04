@@ -3,12 +3,19 @@ import json
 import re
 
 from langchain_core.language_models import BaseChatModel
+from langchain_core.messages.ai import AIMessage
 from langgraph import graph
 import markdown
 import pydantic
 
 
-
+def _maybe_return_content(msg: str | AIMessage):
+    if isinstance(msg, str):
+        return msg
+    elif isinstance(msg, AIMessage):
+        return msg.content
+    else:
+        raise ValueError("Undefined output LLM type.")
 
 class ArabicState(pydantic.BaseModel):
     arabic_sentence: str
@@ -43,6 +50,7 @@ def get_tashkeel(state: ArabicState, llm: BaseChatModel):
     Output:
     """
     msg = llm.invoke(query)
+    msg = _maybe_return_content(msg)
     return {"tashkeel_sentence": msg}
 
 def get_translation(state: ArabicState, llm: BaseChatModel):
@@ -68,6 +76,7 @@ def get_translation(state: ArabicState, llm: BaseChatModel):
     Output:
     """
     msg = llm.invoke(query)
+    msg = _maybe_return_content(msg)
     return {"translated_sentence": msg}
 
 class WordAnalysis(pydantic.BaseModel):
@@ -240,6 +249,7 @@ def get_word_by_word_analysis(state: ArabicState, llm: BaseChatModel):
 
     
     msg = llm.invoke(query)
+    msg = _maybe_return_content(msg)
     vocab = extract_json_from_markdown(msg)
     if vocab is None:
         vocab = msg
@@ -275,6 +285,7 @@ def get_explanation(state: ArabicState, llm: BaseChatModel):
     """
 
     msg = llm.invoke(query)
+    msg = _maybe_return_content(msg)
     return {"explanation": markdown.markdown(msg)}
 
 def aggregate(state: ArabicState):

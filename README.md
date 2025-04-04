@@ -35,6 +35,16 @@ uv run python automatic_translation_all.py -i out/article_all.json -o out/articl
 The model runs locally using QWen2.5 72B. If you want a faster model you can use Groq
 
 
+```bash
+uv run python automatic_translation_all.py -i out/article_all.json -o out/article_all_with_llm.json --use-groq
+```
+
+Do not forget to export
+```bash
+export GROQ_API_KEY=XXX
+```
+
+
 
 Then to create flashcard: use:
 ```bash

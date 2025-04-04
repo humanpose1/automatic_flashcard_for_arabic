@@ -8,29 +8,33 @@ import genanki
 import tqdm
 
 
-def json_to_html(json_str: str) -> str:
-    data = json.loads(json_str)
-    html = ""
-    for word, details in data.items():
-        html += f"<h2>{word}</h2>"
-        html += f"<p><strong>Pronunciation:</strong> {details.get('pronounciation', 'N/A')}</p>"
-        
-        if 'meanings' in details:
-            html += "<p><strong>Meanings:</strong> " + ", ".join(details['meanings']) + "</p>"
-        
-        if 'root' in details:
-            root = details['root']
-            html += f"<p><strong>Root Word:</strong> {root.get('root_word', 'N/A')}</p>"
-            html += f"<p><strong>Root Meaning:</strong> {root.get('root_meaning', 'N/A')}</p>"
-        
-        if 'examples' in details and details['examples']:
-            html += "<p><strong>Examples:</strong></p><ul>"
-            for example in details['examples']:
-                for phrase, meaning in example.items():
-                    html += f"<li><strong>{phrase}:</strong> {meaning}</li>"
-            html += "</ul>"
-        
-        html += "<hr>"
+def json_to_html(json_str: str) -> str | None:
+    try:
+        data = json.loads(json_str)
+        html = ""
+        for word, details in data.items():
+            html += f"<h2>{word}</h2>"
+            html += f"<p><strong>Pronunciation:</strong> {details.get('pronounciation', 'N/A')}</p>"
+            
+            if 'meanings' in details:
+                html += "<p><strong>Meanings:</strong> " + ", ".join(details['meanings']) + "</p>"
+            
+            if 'root' in details:
+                root = details['root']
+                html += f"<p><strong>Root Word:</strong> {root.get('root_word', 'N/A')}</p>"
+                html += f"<p><strong>Root Meaning:</strong> {root.get('root_meaning', 'N/A')}</p>"
+            
+            if 'examples' in details and details['examples']:
+                html += "<p><strong>Examples:</strong></p><ul>"
+                for example in details['examples']:
+                    for phrase, meaning in example.items():
+                        html += f"<li><strong>{phrase}:</strong> {meaning}</li>"
+                html += "</ul>"
+            
+            html += "<hr>"
+    except json.JSONDecodeError as e:
+        print(f"Cannot Parse JSON {e}")
+        html = None
     return html
 
 
@@ -56,20 +60,22 @@ class FlashCard:
             info: dict[str, str | dict],
             labels: Optional[Sequence[str]]=None) -> genanki.Deck:
         llm_output = info["llm_output"]
-        note = genanki.Note(
-            model=self.model,
-            fields=[
-                info["arabic_sentence"],
-                info["true_tashkeel"],
-                llm_output["translated_sentence"],
-                json_to_html(llm_output["vocabulary"]),
-                llm_output["explanation"],
-                info["link"],
-            ]
-        )
-        if labels is not None:
-            note.tags.extend(labels)
-        self.deck.add_note(note)
+        vocab = json_to_html(llm_output["vocabulary"])
+        if vocab is not None:
+            note = genanki.Note(
+                model=self.model,
+                fields=[
+                    info["arabic_sentence"],
+                    info["true_tashkeel"],
+                    llm_output["translated_sentence"],
+                    vocab,
+                    llm_output["explanation"],
+                    info["link"],
+                ]
+            )
+            if labels is not None:
+                note.tags.extend(labels)
+            self.deck.add_note(note)
 
 def init_flashcard_reverse(title: str):
 
